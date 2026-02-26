@@ -1,249 +1,151 @@
 #include "statsig.h"
-#include "libstatsig_ffi.h"
-#include <cstring>
-#include <iostream>
+#include "../include/libstatsig_ffi.h"
 #include <nlohmann/json.hpp>
-#include <sstream>
+#include <stdexcept>
+#include <string>
 
 using json = nlohmann::json;
-namespace statsig_cpp_core {
 
-// Statsig implementation
-Statsig::Statsig(const std::string &sdk_key) : sdk_key_(sdk_key) {
-  ref_ = statsig_create(sdk_key.c_str(), 0);
+namespace deepl_statsig {
+
+// ── Handle destructors / move semantics ─────────────────────────────────────
+
+User::~User() {
+    if (_ref != 0) statsig_user_release(_ref);
 }
-
-Statsig::Statsig(const std::string &sdk_key, const StatsigOptions &options)
-    : sdk_key_(sdk_key) {
-  ref_ = statsig_create(sdk_key.c_str(), options.ref);
-}
-
-Statsig::~Statsig() {
-  if (ref_ != 0) {
-    statsig_release(ref_);
-  }
-}
-
-Statsig &Statsig::operator=(const Statsig &other) {
-  if (this != &other) {
-    if (ref_ != 0) {
-      statsig_release(ref_);
+User::User(User&& o) noexcept : _ref(o._ref) { o._ref = 0; }
+User& User::operator=(User&& o) noexcept {
+    if (this != &o) {
+        if (_ref != 0) statsig_user_release(_ref);
+        _ref = o._ref;
+        o._ref = 0;
     }
-    sdk_key_ = other.sdk_key_;
-    ref_ =
-        0; // This would need to be handled differently in a real implementation
-  }
-  return *this;
+    return *this;
 }
 
-Statsig::Statsig(Statsig &&other) noexcept
-    : ref_(other.ref_), sdk_key_(std::move(other.sdk_key_)) {
-  other.ref_ = 0;
+Options::~Options() {
+    if (_ref != 0) statsig_options_release(_ref);
 }
-
-Statsig &Statsig::operator=(Statsig &&other) noexcept {
-  if (this != &other) {
-    if (ref_ != 0) {
-      statsig_release(ref_);
+Options::Options(Options&& o) noexcept : _ref(o._ref) { o._ref = 0; }
+Options& Options::operator=(Options&& o) noexcept {
+    if (this != &o) {
+        if (_ref != 0) statsig_options_release(_ref);
+        _ref = o._ref;
+        o._ref = 0;
     }
-    ref_ = other.ref_;
-    sdk_key_ = std::move(other.sdk_key_);
-    other.ref_ = 0;
-  }
-  return *this;
+    return *this;
 }
 
-// Initialization methods
-void Statsig::initialize(std::function<void()> callback) {
-  if (callback) {
-    statsig_initialize(ref_, [](void) {
-      // This is a simplified callback - in a real implementation,
-      // you'd need to store and call the actual callback
-    });
-  } else {
-    statsig_initialize(ref_, nullptr);
-  }
+StatsigClient::~StatsigClient() {
+    if (_ref != 0) statsig_release(_ref);
 }
-
-void Statsig::initializeWithDetails(
-    std::function<void(const std::string &)> callback) {
-  if (callback) {
-    statsig_initialize_with_details(ref_, [](char *result) {
-      // This is a simplified callback - in a real implementation,
-      // you'd need to store and call the actual callback
-      if (result) {
-        free_string(result);
-      }
-    });
-  } else {
-    statsig_initialize_with_details(ref_, nullptr);
-  }
-}
-
-std::string Statsig::initializeWithDetailsBlocking() {
-  char *result = statsig_initialize_with_details_blocking(ref_);
-  if (result) {
-    std::string result_str(result);
-    free_string(result);
-    return result_str;
-  }
-  return "";
-}
-
-void Statsig::initializeBlocking() { statsig_initialize_blocking(ref_); }
-
-// Shutdown methods
-void Statsig::shutdown(std::function<void()> callback) {
-  if (callback) {
-    statsig_shutdown(ref_, [](void) {
-      // This is a simplified callback - in a real implementation,
-      // you'd need to store and call the actual callback
-    });
-  } else {
-    statsig_shutdown(ref_, nullptr);
-  }
-}
-
-void Statsig::shutdownBlocking() { statsig_shutdown_blocking(ref_); }
-
-// Event logging
-void Statsig::flushEvents(std::function<void()> callback) {
-  if (callback) {
-    statsig_flush_events(ref_, [](void) {
-      // This is a simplified callback - in a real implementation,
-      // you'd need to store and call the actual callback
-    });
-  } else {
-    statsig_flush_events(ref_, nullptr);
-  }
-}
-
-void Statsig::flushEventsBlocking() { statsig_flush_events_blocking(ref_); }
-
-void Statsig::logEvent(
-    const User &user, const std::string &event_name,
-    const std::unordered_map<std::string, std::string> &event_value,
-    const std::string &metadata) {
-  // Create JSON for the event
-  std::ostringstream json_stream;
-  json_stream << "{";
-  json_stream << "\"eventName\":\"" << event_name << "\"";
-
-  if (!event_value.empty()) {
-    json_stream << ",\"value\":{";
-    bool first = true;
-    for (const auto &pair : event_value) {
-      if (!first)
-        json_stream << ",";
-      json_stream << "\"" << pair.first << "\":\"" << pair.second << "\"";
-      first = false;
+StatsigClient::StatsigClient(StatsigClient&& o) noexcept : _ref(o._ref) { o._ref = 0; }
+StatsigClient& StatsigClient::operator=(StatsigClient&& o) noexcept {
+    if (this != &o) {
+        if (_ref != 0) statsig_release(_ref);
+        _ref = o._ref;
+        o._ref = 0;
     }
-
-    json_stream << "}";
-  }
-
-  if (!metadata.empty()) {
-    json_stream << ",\"metadata\":\"" << metadata << "\"";
-  }
-
-  json_stream << "}";
-
-  statsig_log_event(ref_, user.ref, json_stream.str().c_str());
+    return *this;
 }
 
-// Feature Gates
-bool Statsig::checkGate(const User &user, const std::string &gate_name,
-                        const std::optional<CheckGateOptions> &options) {
-  std::string serialized_options;
-  if (options) {
-    json options_json = *options;
-    serialized_options = options_json.dump();
-  } else {
-    serialized_options = "{}";
-  }
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
-  return statsig_check_gate(ref_, user.ref, gate_name.c_str(),
-                            serialized_options.c_str());
+static EvaluationDetails parse_details(const json& j) {
+    EvaluationDetails d;
+    d.reason = j.value("reason", std::string{});
+    if (j.contains("lcut") && j["lcut"].is_number())
+        d.lcut = j["lcut"].get<uint64_t>();
+    if (j.contains("received_at") && j["received_at"].is_number())
+        d.received_at = j["received_at"].get<uint64_t>();
+    return d;
 }
 
-FeatureGate
-Statsig::getFeatureGate(const User &user, const std::string &gate_name,
-                        const std::optional<CheckGateOptions> &options) {
-  std::string serialized_options;
-  if (options) {
-    json options_json = *options;
-    serialized_options = options_json.dump();
-  } else {
-    serialized_options = "{}";
-  }
-  char *result = statsig_get_feature_gate(ref_, user.ref, gate_name.c_str(),
-                                          serialized_options.c_str());
-  if (result) {
-    std::string result_str(result);
-    free_string(result);
-    return FeatureGate(result_str);
-  }
-  return FeatureGate();
+static FeatureGate parse_feature_gate(const std::string& json_str) {
+    const json j = json::parse(json_str);
+    FeatureGate g;
+    g.name    = j.value("name",    std::string{});
+    g.value   = j.value("value",   false);
+    g.rule_id = j.value("rule_id", std::string{});
+    g.id_type = j.value("id_type", std::string{});
+    if (j.contains("details") && j["details"].is_object())
+        g.details = parse_details(j["details"]);
+    return g;
 }
 
-Experiment
-Statsig::getExperiment(const User &user, const std::string &experiment_name,
-                       const std::optional<GetExperimentOptions> &options) {
-  std::string serialized_options;
-  if (options) {
-    json options_json = *options;
-    serialized_options = options_json.dump();
-  } else {
-    serialized_options = "{}";
-  }
-  char *result = statsig_get_experiment(ref_, user.ref, experiment_name.c_str(),
-                                        serialized_options.c_str());
-  if (result) {
-    std::string result_str(result);
-    free_string(result);
-    return Experiment(result_str);
-  }
-  return Experiment();
+static std::string gate_options_json(const CheckGateOptions& opts) {
+    return json{{"disable_exposure_logging", opts.disable_exposure_logging}}.dump();
 }
 
-DynamicConfig Statsig::getDynamicConfig(
-    const User &user, const std::string &config_name,
-    const std::optional<GetDynamicConfigOptions> &options) {
-  std::string serialized_options;
-  if (options) {
-    json options_json = *options;
-    serialized_options = options_json.dump();
-  } else {
-    serialized_options = "{}";
-  }
-  char *result = statsig_get_dynamic_config(ref_, user.ref, config_name.c_str(),
-                                            serialized_options.c_str());
-  if (result) {
-    std::string result_str(result);
-    free_string(result);
-    return DynamicConfig(result_str);
-  }
-  return DynamicConfig();
+// ── Factory functions ────────────────────────────────────────────────────────
+
+User make_user(const UserData& data) {
+    json j = json::object();
+    if (data.user_id)    j["userID"]    = *data.user_id;
+    if (data.custom_ids) j["customIDs"] = *data.custom_ids;
+    if (data.email)      j["email"]     = *data.email;
+    if (data.ip)         j["ip"]        = *data.ip;
+    if (data.country)    j["country"]   = *data.country;
+    if (data.locale)     j["locale"]    = *data.locale;
+    if (data.app_version) j["appVersion"] = *data.app_version;
+    if (data.custom_json) {
+        // custom_json is a pre-serialised JSON object string; embed it as-is.
+        j["custom"] = json::parse(*data.custom_json);
+    }
+    if (data.private_attributes_json) {
+        j["privateAttributes"] = json::parse(*data.private_attributes_json);
+    }
+    const std::string s = j.dump();
+    return User{statsig_user_create_from_data(s.c_str())};
 }
 
-Layer Statsig::getLayer(const User &user, const std::string &layer_name,
-                        const std::optional<GetLayerOptions> &options) {
-  std::string serialized_options;
-  if (options) {
-    json options_json = *options;
-    serialized_options = options_json.dump();
-  } else {
-    serialized_options = "{}";
-  }
-  char *result = statsig_get_layer(ref_, user.ref, layer_name.c_str(),
-                                   serialized_options.c_str());
-
-  if (result) {
-    std::string result_str(result);
-    free_string(result);
-    return Layer(ref_, result_str);
-  }
-  return Layer();
+Options make_options(const OptionsData& data) {
+    json j = json::object();
+    if (data.specs_url)          j["specs_url"]          = *data.specs_url;
+    if (data.log_event_url)      j["log_event_url"]      = *data.log_event_url;
+    if (data.environment)        j["environment"]        = *data.environment;
+    if (data.output_log_level)   j["output_log_level"]   = *data.output_log_level;
+    if (data.disable_all_logging) j["disable_all_logging"] = *data.disable_all_logging;
+    if (data.disable_network)    j["disable_network"]    = *data.disable_network;
+    const std::string s = j.dump();
+    return Options{statsig_options_create_from_data(s.c_str())};
 }
 
-} // namespace statsig_cpp_core
+StatsigClient make_client(const std::string& sdk_key, std::optional<Options> opts) {
+    // Pass the options _ref if present. The FFI takes its own internal copy at
+    // statsig_create time, so it is safe for the Options RAII handle to release
+    // its ref normally after this call.
+    const uint64_t opts_ref = opts ? opts->ref() : 0;
+    return StatsigClient{statsig_create(sdk_key.c_str(), opts_ref)};
+}
+
+// ── Core API ─────────────────────────────────────────────────────────────────
+
+void initialize_blocking(StatsigClient& client) {
+    statsig_initialize_blocking(client.ref());
+}
+
+void shutdown_blocking(StatsigClient& client) {
+    statsig_shutdown_blocking(client.ref());
+}
+
+bool check_gate(StatsigClient& client, const User& user,
+                const std::string& gate_name, CheckGateOptions opts) {
+    const std::string opts_str = gate_options_json(opts);
+    return statsig_check_gate(client.ref(), user.ref(), gate_name.c_str(), opts_str.c_str());
+}
+
+FeatureGate get_feature_gate(StatsigClient& client, const User& user,
+                             const std::string& gate_name, CheckGateOptions opts) {
+    const std::string opts_str = gate_options_json(opts);
+    char * fg = statsig_get_feature_gate(client.ref(), user.ref(),
+                                           gate_name.c_str(), opts_str.c_str());
+    if (!fg)
+        return FeatureGate{};
+
+    std::string fg_str(fg);
+    free_string(fg);
+    return parse_feature_gate(std::move(fg_str));
+}
+
+} // namespace deepl_statsig

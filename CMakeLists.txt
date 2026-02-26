@@ -14,7 +14,6 @@ set(STATSIG_CPP_VERSION "${PROJECT_VERSION}-${PROJECT_VERSION_SUFFIX}")
 # Wrap the prebuilt dylib as an imported library
 file(GLOB STATSIG_SOURCE_FILES "src/*")
 add_library(Statsig ${STATSIG_SOURCE_FILES})
-target_compile_options(Statsig PRIVATE -Wno-shadow)
 
 # Set include directories
 target_include_directories(Statsig PRIVATE 

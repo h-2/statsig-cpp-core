@@ -13,26 +13,16 @@ unset(CMAKE_MODULE_PATH CACHE)
 include(GoogleTest)
 enable_testing()
 
-file(GLOB STATSIG_TEST_FILES "${PROJECT_SOURCE_DIR}/tests/*")
-
-add_executable(google_tests
+add_executable(unit_test
   ${STATSIG_SOURCE_FILES}
-  ${STATSIG_TEST_FILES}
+  ${CMAKE_CURRENT_SOURCE_DIR}/statsig_test.cpp
 )
 
-message(STATUS "🐾 PROJECT_SOURCE_DIR = ${PROJECT_SOURCE_DIR}")
-message(STATUS "🐾 CMAKE_CURRENT_SOURCE_DIR = ${CMAKE_CURRENT_SOURCE_DIR}")
-message(STATUS "🐾 STATSIG_SOURCE_FILES = ${STATSIG_SOURCE_FILES}")
-message(STATUS "🐾 STATSIG_TEST_FILES = ${STATSIG_TEST_FILES}")
+target_include_directories(unit_test PRIVATE "../include")
+target_include_directories(unit_test PRIVATE "../src")
 
+target_link_libraries(unit_test Statsig)
+target_link_libraries(unit_test GTest::gtest_main)
+target_compile_features(unit_test PUBLIC cxx_std_17)
 
-target_include_directories(google_tests PRIVATE "../include")
-target_include_directories(google_tests PRIVATE "../src")
-
-target_link_libraries(google_tests Statsig)
-target_link_libraries(google_tests GTest::gtest_main)
-target_compile_features(google_tests PUBLIC cxx_std_17)
-
-add_definitions( -DTESTS_ROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}" )
-
-gtest_discover_tests(google_tests)
+gtest_discover_tests(unit_test)
