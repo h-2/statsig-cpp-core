@@ -77,25 +77,25 @@ struct CheckGateOptions {
 // the make_* factory functions. Brace-initialisation works for all fields.
 
 struct UserData {
-    std::optional<std::string> user_id;
-    std::optional<std::unordered_map<std::string, std::string>> custom_ids;
-    std::optional<std::string> email;
-    std::optional<std::string> ip;
-    std::optional<std::string> country;
-    std::optional<std::string> locale;
-    std::optional<std::string> app_version;
+    std::optional<std::string> user_id{};
+    std::optional<std::unordered_map<std::string, std::string>> custom_ids{};
+    std::optional<std::string> email{};
+    std::optional<std::string> ip{};
+    std::optional<std::string> country{};
+    std::optional<std::string> locale{};
+    std::optional<std::string> app_version{};
     // Arbitrary JSON objects as pre-serialised strings, e.g. "{\"plan\":\"pro\"}"
-    std::optional<std::string> custom_json;
-    std::optional<std::string> private_attributes_json;
+    std::optional<std::string> custom_json{};
+    std::optional<std::string> private_attributes_json{};
 };
 
 struct OptionsData {
-    std::optional<std::string> specs_url;
-    std::optional<std::string> log_event_url;
-    std::optional<std::string> environment;
-    std::optional<std::string> output_log_level;
-    std::optional<bool> disable_all_logging;
-    std::optional<bool> disable_network;
+    std::optional<std::string> specs_url{};
+    std::optional<std::string> log_event_url{};
+    std::optional<std::string> environment{};
+    std::optional<std::string> output_log_level{};
+    std::optional<bool> disable_all_logging{};
+    std::optional<bool> disable_network{};
 };
 
 // ── Factory free functions ───────────────────────────────────────────────────
