@@ -129,13 +129,13 @@ void shutdown_blocking(StatsigClient& client) {
     statsig_shutdown_blocking(client.ref());
 }
 
-bool check_gate(StatsigClient& client, const User& user,
+bool check_gate(const StatsigClient& client, const User& user,
                 const std::string& gate_name, CheckGateOptions opts) {
     const std::string opts_str = gate_options_json(opts);
     return statsig_check_gate(client.ref(), user.ref(), gate_name.c_str(), opts_str.c_str());
 }
 
-FeatureGate get_feature_gate(StatsigClient& client, const User& user,
+FeatureGate get_feature_gate(const StatsigClient& client, const User& user,
                              const std::string& gate_name, CheckGateOptions opts) {
     const std::string opts_str = gate_options_json(opts);
     char * fg = statsig_get_feature_gate(client.ref(), user.ref(),

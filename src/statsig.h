@@ -112,11 +112,11 @@ StatsigClient make_client(const std::string& sdk_key,
 void initialize_blocking(StatsigClient& client);
 void shutdown_blocking(StatsigClient& client);
 
-bool check_gate(StatsigClient& client, const User& user,
+bool check_gate(const StatsigClient& client, const User& user,
                 const std::string& gate_name,
                 CheckGateOptions opts = {});
 
-FeatureGate get_feature_gate(StatsigClient& client, const User& user,
+FeatureGate get_feature_gate(const StatsigClient& client, const User& user,
                              const std::string& gate_name,
                              CheckGateOptions opts = {});
 
