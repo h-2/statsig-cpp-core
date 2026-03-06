@@ -116,13 +116,19 @@ else()
     # Adjust asset name according to your OS/arch
     generate_target_name(${STATSIG_CPP_VERSION} ASSET_NAME SUFFIX_VAR)
     set(ASSET_URL "https://github.com/statsig-io/statsig-cpp-core/releases/download/${STATSIG_CPP_VERSION}/${ASSET_NAME}")
-    set(ASSET_PATH "${ASSET_NAME}")
+    set(ASSET_PATH "${CMAKE_BINARY_DIR}/${ASSET_NAME}")
 
     message(STATUS "Downloading asset from: ${ASSET_URL}")
     file(DOWNLOAD
         "${ASSET_URL}"
         "${ASSET_PATH}"
+        STATUS download_status
     )
+    list(GET download_status 0 download_error)
+    if(download_error)
+        list(GET download_status 1 download_message)
+        message(FATAL_ERROR "Failed to download ${ASSET_URL}: ${download_message}")
+    endif()
     message(STATUS "Extracting ${ASSET_NAME} to ${CMAKE_BINARY_DIR}")
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E tar xvf  "${ASSET_PATH}"
